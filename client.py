@@ -38,7 +38,7 @@ print('( !старт )')
 first()
 
 
- while True:
+while True:
  	print('Ожидайте ответа: ')
  	msg = sock.recv(1024).decode()
  	if msg != 'exit':
@@ -52,7 +52,6 @@ first()
  		sock.send(msg.encode('utf-8'))
  	else:
  		sock.send(msg.encode('utf-8'))
- 		break
+		break
 
- sock.close()
-1
+sock.close()
