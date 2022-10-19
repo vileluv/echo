@@ -1,4 +1,4 @@
-import port socket
+import socket
 import random
 import logging
 import json
@@ -52,7 +52,7 @@ def record_t(file_name, line):   #ЗАписывает в txt файл
 
 
 
- def start():
+def start():
  	conn, addr = sock.accept()
  	right = 1
  	try:
