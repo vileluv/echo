@@ -1,106 +1,106 @@
 import socket
-import random
 import logging
-import json
-logging.basicConfig(filename = 'log.log',level=logging.INFO)
-sock = socket.socket()
 
-try:
-	port = 8080
-	sock.bind(('', port))
-except:
-	port = random.randint(8000,8300)
-	sock.bind(('', port))
-print(port)
-
-sock.listen(1)
-
-def open_f(file_name):
-	try:
-		with open(file_name, 'r') as f:
-			data = json.load(f)
-	except:
-		with open(file_name, 'w') as f:
-			json.dump({} ,f)
-		with open(file_name, 'r') as f:
-			data = json.load(f)
-	return data
+logging.basicConfig(filename="server.log", level=logging.INFO)
 
 
-def record_f(file_name, data):
-	try:
-		with open(file_name, 'r') as f:
-			data_old = json.load(f)
-		data_old.update(data)
-		with open(file_name, 'w') as f:
-			json.dump(data_old ,f)
-	except:
-		with open(file_name, 'w') as f:
-			json.dump(data ,f)
+def set_host():
+    while True:
+        print('Type HOST below or write "def" for default HOST')
+        try:
+            msg = input()
+            if msg == "def":
+                host = '127.0.0.1'
+            else:
+                host = msg
+            break
+        except:
+            print('You enter not supported HOST, please try again')
+    return host
 
 
-def open_t(file_name):
-	file = open(file_name, 'r')
-	return file
-	file.close()
+def set_port():
+    while True:
+        print('Type PORT below or write "def" for default PORT')
+        try:
+            msg = input()
+            if msg == "def":
+                port = 9090
+                break
+            elif type(msg) is not int:
+                print('You enter not supported PORT, please try again')
+            else:
+                port = msg
+                break
+        except:
+            print('You enter not supported PORT, please try again')
+    return port
 
 
-def record_t(file_name, line):   #ЗАписывает в txt файл
-	file = open(file_name, 'a')
-	file.write(line + ' ;\n')
-	file.close()
+def message_handler(conn, addr):
+    while True:
+        try:
+            msg = conn.recv(1024)
+            if not msg:
+                break
 
 
 
-def start():
- 	conn, addr = sock.accept()
- 	right = 1
- 	try:
- 		data = open_t('book.txt')
- 	except:
- 		data = record_t('book.txt','')
- 		data = open_t('book.txt')
- 	nal = 'NO'
- 	for i in data:
- 		if i != ' ;\n':
- 			if i.split(', ')[2] == addr[0]:
- 				nal = 'YES'
- 				login = i.split(', ')[0]
- 	conn.send(str(nal).encode('utf-8'))
- 	if nal == 'YES':
- 		stata = open_f('stata.json')
- 		if stata[login] == conn.recv(1024).decode():
- 			conn.send('Пароль верен'.encode('utf-8'))
- 			record_t('book.txt', login+', '+str(port)+', '+str(addr[0])+ ', '+ str(addr[1]))
- 		else:
- 			conn.send('Пароль не верен'.encode('utf-8'))
- 			print('Неудачная попытка подключения')
- 			logging.info(login + 'пытался подключиться')
- 			right = 0
- 	else:
- 		login = conn.recv(1024).decode()
- 		password = conn.recv(1024).decode()
- 		record_f('stata.json',{login:password})
- 		record_t('book.txt', login+', '+str(port)+', '+str(addr[0])+ ', '+ str(addr[1]))
- 	logging.info(str(addr[0])+', '+str(addr[1])+' подсоединился')
+            data = "You do not have access to use this server"
+            send_message(data)
+            conn.close()
+            log = 'Last user do not enter a right login or password'
+            logging.info(log)
+            print(log)
+            break
 
- 	first = conn.recv(1024).decode()
- 	print(first)
+        except Exception as ex:
+            log = 'An error in receiving messages was occurred by exception: %s' % ex
+            logging.error(log)
+            print(log)
+        else:
+            send_message(data)
 
 
- 	while right:
- 		msg = input('Server: ')
- 		if msg != 'exit':
- 			conn.send(msg.encode('utf-8'))
- 		else:
- 			conn.send(msg.encode('utf-8'))
- 			logging.info('Сервер отключился ')
- 			break
- 		print('Ожидайте ответа: ')
- 		msg = conn.recv(1024).decode()
- 		if msg != 'exit':
- 			print('Client: ' + msg)
- 		else:
- 			print('Клиент отключился ')
- 			logging.info(str(addr[0])+', '+str(addr[1])+' отключился')
- 			start()
+def send_message(data):
+    try:
+        conn.send(data.encode())
+        log = "Last message was send back to client successfully"
+        logging.info(log)
+        print(log)
+    except Exception as ex:
+        log = 'An error in sending message was occurred by exception: %s' % ex
+        logging.error(log)
+        print(log)
+
+
+HOST = set_host()
+PORT = set_port()
+
+log = "Server started with HOST: %s and PORT: %s" % (HOST, PORT)
+logging.info(log)
+print(log)
+
+sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+while True:
+    try:
+        sock.bind((HOST, PORT))
+    except:
+        log = 'Unable to connect to %s PORT. Trying to connect to %s PORT' % (PORT, PORT+1)
+        logging.error(log)
+        print(log)
+        PORT = PORT + 1
+    else:
+        break
+
+while True:
+    log = 'Listening %s port...' % PORT
+    logging.info(log)
+    print(log)
+
+    sock.listen(1)
+    conn, addr = sock.accept()
+    message_handler(conn, addr)
+
+    conn.close()
